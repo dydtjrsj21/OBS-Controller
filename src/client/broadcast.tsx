@@ -19,7 +19,7 @@ const StyledDiv = styled.div`
     flex-direction: column;
     padding: 100px 100px;
 `
-const ws = new WebSocket(`ws://${window.location.host}/broadcast`)
+const ws = new WebSocket(`ws://${window.location.host}:8001/broadcast`)
 function Controller(){
     const [scenes, setScenes] = useState<string[]>([]);
     const [curScene, setCurScene] = useState<string>('')
@@ -34,7 +34,7 @@ function Controller(){
     
 
     const onClickHandler = (scene)=>{
-        if(!confirm('장면을 변경하시겠습니까?')) return;
+        // if(!confirm('장면을 변경하시겠습니까?')) return;
         axios.post('/broadcast/set', {scene})
         .then(({data})=>{
             if(data){
@@ -48,9 +48,9 @@ function Controller(){
             <StyledDiv>
                 <Title style={{marginBottom : "30px"}}>현재화면 : {curScene}</Title>
                 {scenes.filter(scene=>!scene.includes('BRIDGE') && !scene.includes('LOOPING')).map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene}</StyledButton>)}
-                <BottomLine width='300px' style={{borderWidth : "1px", borderColor : "white", margin : "30px 30px"}}/>
+                {/* <BottomLine width='300px' style={{borderWidth : "1px", borderColor : "white", margin : "30px 30px"}}/>
                 <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지영상</StyledButton>
-                <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('LOOPING'))}/>)}} style={{margin : "30px 0"}}>루핑영상</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('LOOPING'))}/>)}} style={{margin : "30px 0"}}>루핑영상</StyledButton> */}
             </StyledDiv>
             {/* <StyledDiv>
                 <Music/>

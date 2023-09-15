@@ -1,16 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const express = require("express");
-const app_1 = require("../app");
 const router = express.Router();
 router.get('/', (req, res, next) => {
     res.render('index', { reactFile: 'music' });
 });
 router.get('/get', async (req, res, next) => {
-    app_1.LED.call('GetInputList', { inputKind: "ffmpeg_source" })
+    LED.call('GetInputList', { inputKind: "ffmpeg_source" })
         .then(async (data) => {
         const result = await Promise.all(data.inputs.map(async (val) => {
-            const volume = (await app_1.LED.call('GetInputVolume', { inputName: val.inputName })).inputVolumeDb;
+            const volume = (await LED.call('GetInputVolume', { inputName: val.inputName })).inputVolumeDb;
             return { inputName: val.inputName, volume };
         }));
         res.send(result);
@@ -21,7 +20,7 @@ router.get('/get', async (req, res, next) => {
 });
 router.post('/set', (req, res, next) => {
     const { volume, inputName } = req.body;
-    app_1.LED.call('SetInputVolume', { inputName, inputVolumeDb: parseFloat(volume) });
+    LED.call('SetInputVolume', { inputName, inputVolumeDb: parseFloat(volume) });
     res.end();
 });
 exports.default = router;

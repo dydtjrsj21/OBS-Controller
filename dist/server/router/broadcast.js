@@ -8,7 +8,6 @@ router.get('/', (req, res, next) => {
 });
 router.get('/get', async (req, res, next) => {
     res.send(await (0, app_1.SceneGenerator)(app_1.BROADCAST));
-    (0, app_1.SceneGenerator)(app_1.LED);
 });
 router.post('/set', (req, res, next) => {
     const { scene } = req.body;
