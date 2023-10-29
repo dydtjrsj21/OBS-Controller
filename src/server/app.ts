@@ -15,7 +15,6 @@ export const BROADCAST = new OBSWebSocket();
 export const SceneGenerator = async (OBS : OBSWebSocket)=>{
     const data = await OBS.call('GetSceneList')
     let scenes = data.scenes.map(val=>val.sceneName) as string[]
-    // const {sceneItemTransform} = OBS == LED ? await OBS.call('GetSceneItemTransform', {sceneName : "컴퓨터화면", sceneItemId : 2}) : {sceneItemTransform : {}}
     return scenes
 }
 const TARGET = process.env.npm_lifecycle_event;
@@ -48,14 +47,10 @@ app.use('/image',(req,res,next)=>{
     express.static('./dist/client/image')(req,res,next)
 });
 
-//LED control
-// import led from './router/led'
-// app.use('/led', led)
 import broadcast from './router/broadcast'
 app.use('/broadcast', broadcast)
-// import music from './router/music'
-// app.use('/music', music)
-
+import music from './router/music'
+app.use('/music', music)
 app.listen(80, () => {})
 
 
@@ -63,24 +58,12 @@ app.listen(80, () => {})
 import {WebSocketServer} from 'ws'
 const wsBroadcast = new WebSocketServer({port : 8001})
 wsBroadcast.on("connection", (ws, req)=>{
-    if(req.url.includes('broadcast')){
-        BROADCAST.call('GetCurrentProgramScene').then(result=>{
-            setTimeout(()=>{
-                ws.send(result.currentProgramSceneName)
-            },500)
-        })
-        BROADCAST.on('CurrentProgramSceneChanged',({sceneName})=>{
-            ws.send(sceneName)
-        })
-    }
-    else{
-        // LED.call('GetCurrentProgramScene').then(result=>{
-        //     setTimeout(()=>{
-        //         ws.send(result.currentProgramSceneName)
-        //     },500)
-        // })
-        // LED.on('CurrentProgramSceneChanged',({sceneName})=>{
-        //     ws.send(sceneName)
-        // })
-    }
+    BROADCAST.call('GetCurrentProgramScene').then(result=>{
+        setTimeout(()=>{
+            ws.send(result.currentProgramSceneName)
+        },500)
+    })
+    BROADCAST.on('CurrentProgramSceneChanged',({sceneName})=>{
+        ws.send(sceneName)
+    })
 })

@@ -49,20 +49,18 @@ app.use('/image', (req, res, next) => {
 });
 const broadcast_1 = require("./router/broadcast");
 app.use('/broadcast', broadcast_1.default);
+const music_1 = require("./router/music");
+app.use('/music', music_1.default);
 app.listen(80, () => { });
 const ws_1 = require("ws");
 const wsBroadcast = new ws_1.WebSocketServer({ port: 8001 });
 wsBroadcast.on("connection", (ws, req) => {
-    if (req.url.includes('broadcast')) {
-        exports.BROADCAST.call('GetCurrentProgramScene').then(result => {
-            setTimeout(() => {
-                ws.send(result.currentProgramSceneName);
-            }, 500);
-        });
-        exports.BROADCAST.on('CurrentProgramSceneChanged', ({ sceneName }) => {
-            ws.send(sceneName);
-        });
-    }
-    else {
-    }
+    exports.BROADCAST.call('GetCurrentProgramScene').then(result => {
+        setTimeout(() => {
+            ws.send(result.currentProgramSceneName);
+        }, 500);
+    });
+    exports.BROADCAST.on('CurrentProgramSceneChanged', ({ sceneName }) => {
+        ws.send(sceneName);
+    });
 });

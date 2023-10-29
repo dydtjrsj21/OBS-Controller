@@ -7,6 +7,7 @@ import StyledButton, { ContentButton } from './Util/Input/Button';
 import { Modal, useModal } from './Util/Modal';
 import { BottomLine } from './Util/BottomLine';
 import { Title } from './Util/TextStyle';
+import Music from './music';
 
 const StyledBg = styled.div`
     background-color: ${color.box};
@@ -52,9 +53,9 @@ function Controller(){
                 <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지영상</StyledButton>
                 <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('LOOPING'))}/>)}} style={{margin : "30px 0"}}>루핑영상</StyledButton> */}
             </StyledDiv>
-            {/* <StyledDiv>
+            <StyledDiv>
                 <Music/>
-            </StyledDiv> */}
+            </StyledDiv>
         </StyledBg>
     )
 }
