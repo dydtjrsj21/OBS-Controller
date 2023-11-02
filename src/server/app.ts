@@ -4,15 +4,18 @@ import * as nunjucks from 'nunjucks'
 import * as path from 'path'
 import * as fs from 'fs'
 import OBSWebSocket from 'obs-websocket-js';
+import {NOTEBOOK_ADDRESS} from './util/constant'
 
-export const LED = new OBSWebSocket();
+export const BROADCAST = new OBSWebSocket();
+export const NOTEBOOK = new OBSWebSocket();
+
 (async function init(){
     try{
-        await LED.connect('ws://localhost:5555', "snulive")
         await BROADCAST.connect('ws://localhost:4444', "snulive")
-        LED.on('CurrentProgramSceneChanged', async ({sceneName})=>{
-            if (sceneName.includes('BRIDGE')) {
-                await BROADCAST.call('SetCurrentProgramScene', {sceneName})
+        await NOTEBOOK.connect(NOTEBOOK_ADDRESS, "snulive")
+        NOTEBOOK.on('CurrentProgramSceneChanged', async ({sceneName})=>{
+            if (sceneName.includes('VIDEO') || sceneName.includes('BRIDGE')) {
+                BROADCAST.call('SetCurrentProgramScene', {sceneName : "컴퓨터화면"})
             }
             else{
                 await BROADCAST.call('SetCurrentProgramScene', {sceneName : "카메라 화면 - 풀샷"})
@@ -21,14 +24,15 @@ export const LED = new OBSWebSocket();
     }catch(err){console.error(err)}
     
 })()
-export const BROADCAST = new OBSWebSocket();
+
 export const PATH = {
-    BRIDGE : 'C:/Users/snuli/Desktop/SNULIVE/업무/2023/231030 - 서울대 제도혁신위원회/디자인/출력/간지',
+    BRIDGE : '//Msi_new/공유폴더/231102 - AsIA지역인문학센터/간지',
+    VIDEO : '//Msi_new/공유폴더/231102 - AsIA지역인문학센터/영상'
 }
 export const SceneGenerator = async (OBS : OBSWebSocket)=>{
     const data = await OBS.call('GetSceneList')
     let scenes = data.scenes.map(val=>val.sceneName) as string[]
-    let deleteSceneList = scenes.filter(val=>val.includes('BRIDGE'))
+    let deleteSceneList = scenes.filter(val=>val.includes('BRIDGE') || val.includes('VIDEO'))
     for(let key of Object.keys(PATH)){
         for(let fileName of fs.readdirSync(PATH[key])){
             const sceneName = `[${key}] ${fileName.split('.')[0]}`
@@ -41,13 +45,14 @@ export const SceneGenerator = async (OBS : OBSWebSocket)=>{
             await OBS.call('CreateInput', {
                 sceneName: sceneName,
                 inputName: fileName,
-                inputKind: "image_source",
+                inputKind: key=='BRIDGE' ? "image_source" : "ffmpeg_source",
                 inputSettings: {
                     "file": `${PATH[key]}/${fileName}`,
                 }
             })
         }
     }
+    
 
     for(let deleteScene of deleteSceneList){
         try{await OBS.call('RemoveScene', {sceneName : deleteScene}); scenes = scenes.filter(val=>val != deleteScene);}
@@ -86,10 +91,10 @@ app.use('/image',(req,res,next)=>{
 });
 
 //LED control
-import led from './router/led'
-app.use('/led', led)
 import broadcast from './router/broadcast'
 app.use('/broadcast', broadcast)
+import notebook from './router/notebook'
+app.use('/notebook', notebook)
 import music from './router/music'
 app.use('/music', music)
 
@@ -107,16 +112,6 @@ wsBroadcast.on("connection", (ws, req)=>{
             },500)
         })
         BROADCAST.on('CurrentProgramSceneChanged',({sceneName})=>{
-            ws.send(sceneName)
-        })
-    }
-    else{
-        LED.call('GetCurrentProgramScene').then(result=>{
-            setTimeout(()=>{
-                ws.send(result.currentProgramSceneName)
-            },500)
-        })
-        LED.on('CurrentProgramSceneChanged',({sceneName})=>{
             ws.send(sceneName)
         })
     }

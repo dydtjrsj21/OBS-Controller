@@ -1,20 +1,22 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SceneGenerator = exports.PATH = exports.BROADCAST = exports.LED = void 0;
+exports.SceneGenerator = exports.PATH = exports.NOTEBOOK = exports.BROADCAST = void 0;
 const axios_1 = require("axios");
 const express = require("express");
 const nunjucks = require("nunjucks");
 const path = require("path");
 const fs = require("fs");
 const obs_websocket_js_1 = require("obs-websocket-js");
-exports.LED = new obs_websocket_js_1.default();
+const constant_1 = require("./util/constant");
+exports.BROADCAST = new obs_websocket_js_1.default();
+exports.NOTEBOOK = new obs_websocket_js_1.default();
 (async function init() {
     try {
-        await exports.LED.connect('ws://localhost:5555', "snulive");
         await exports.BROADCAST.connect('ws://localhost:4444', "snulive");
-        exports.LED.on('CurrentProgramSceneChanged', async ({ sceneName }) => {
-            if (sceneName.includes('BRIDGE')) {
-                await exports.BROADCAST.call('SetCurrentProgramScene', { sceneName });
+        await exports.NOTEBOOK.connect(constant_1.NOTEBOOK_ADDRESS, "snulive");
+        exports.NOTEBOOK.on('CurrentProgramSceneChanged', async ({ sceneName }) => {
+            if (sceneName.includes('VIDEO') || sceneName.includes('BRIDGE')) {
+                exports.BROADCAST.call('SetCurrentProgramScene', { sceneName: "컴퓨터화면" });
             }
             else {
                 await exports.BROADCAST.call('SetCurrentProgramScene', { sceneName: "카메라 화면 - 풀샷" });
@@ -25,14 +27,14 @@ exports.LED = new obs_websocket_js_1.default();
         console.error(err);
     }
 })();
-exports.BROADCAST = new obs_websocket_js_1.default();
 exports.PATH = {
-    BRIDGE: 'C:/Users/snuli/Desktop/SNULIVE/업무/2023/231030 - 서울대 제도혁신위원회/디자인/출력/간지',
+    BRIDGE: '//Msi_new/공유폴더/231102 - AsIA지역인문학센터/간지',
+    VIDEO: '//Msi_new/공유폴더/231102 - AsIA지역인문학센터/영상'
 };
 const SceneGenerator = async (OBS) => {
     const data = await OBS.call('GetSceneList');
     let scenes = data.scenes.map(val => val.sceneName);
-    let deleteSceneList = scenes.filter(val => val.includes('BRIDGE'));
+    let deleteSceneList = scenes.filter(val => val.includes('BRIDGE') || val.includes('VIDEO'));
     for (let key of Object.keys(exports.PATH)) {
         for (let fileName of fs.readdirSync(exports.PATH[key])) {
             const sceneName = `[${key}] ${fileName.split('.')[0]}`;
@@ -46,7 +48,7 @@ const SceneGenerator = async (OBS) => {
             await OBS.call('CreateInput', {
                 sceneName: sceneName,
                 inputName: fileName,
-                inputKind: "image_source",
+                inputKind: key == 'BRIDGE' ? "image_source" : "ffmpeg_source",
                 inputSettings: {
                     "file": `${exports.PATH[key]}/${fileName}`,
                 }
@@ -89,10 +91,10 @@ app.use('/css', (req, res, next) => {
 app.use('/image', (req, res, next) => {
     express.static('./dist/client/image')(req, res, next);
 });
-const led_1 = require("./router/led");
-app.use('/led', led_1.default);
 const broadcast_1 = require("./router/broadcast");
 app.use('/broadcast', broadcast_1.default);
+const notebook_1 = require("./router/notebook");
+app.use('/notebook', notebook_1.default);
 const music_1 = require("./router/music");
 app.use('/music', music_1.default);
 app.listen(80, () => { });
@@ -106,16 +108,6 @@ wsBroadcast.on("connection", (ws, req) => {
             }, 500);
         });
         exports.BROADCAST.on('CurrentProgramSceneChanged', ({ sceneName }) => {
-            ws.send(sceneName);
-        });
-    }
-    else {
-        exports.LED.call('GetCurrentProgramScene').then(result => {
-            setTimeout(() => {
-                ws.send(result.currentProgramSceneName);
-            }, 500);
-        });
-        exports.LED.on('CurrentProgramSceneChanged', ({ sceneName }) => {
             ws.send(sceneName);
         });
     }

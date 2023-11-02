@@ -24,12 +24,16 @@ const ws = new WebSocket(`ws://${window.location.host}:8001/led`)
 function Controller(){
     const [scenes, setScenes] = useState<string[]>([]);
     const [curScene, setCurScene] = useState<string>('')
+    const [notebookScenes, setNotebookScenes] = useState<string[]>([]);
     useLayoutEffect(()=>{
         axios.get(`/led/get`).then(({data})=>{
             setScenes(data)
             ws.onmessage = (event)=>{
                 setCurScene(event.data)
             }
+            axios.get('/notebook/get').then(({data})=>{
+                setNotebookScenes(data)
+            })
         })
     },[])
 
@@ -50,7 +54,8 @@ function Controller(){
                 <Title style={{marginBottom : "30px"}}>현재화면 : {curScene}</Title>
                 {scenes.filter(scene=>!scene.includes('BRIDGE') && !scene.includes('LOOPING')).map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene}</StyledButton>)}
                 <BottomLine width='300px' style={{borderWidth : "1px", borderColor : "white", margin : "30px 30px"}}/>
-                <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<LEDModal scenes={scenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<VideoModal scenes={notebookScenes}/>)}} style={{margin : "30px 0"}}>노트북</StyledButton>
             </StyledDiv>
             <StyledDiv>
                 <Music/>
@@ -60,7 +65,7 @@ function Controller(){
 }
 
 
-function MediaModal({scenes} : {scenes : string[]}){
+function LEDModal({scenes} : {scenes : string[]}){
     const onClickHandler = (scene)=>{
         // if(!confirm('장면을 변경하시겠습니까?')) return;
         axios.post('/led/set', {scene})
@@ -71,6 +76,21 @@ function MediaModal({scenes} : {scenes : string[]}){
     return (
         <StyledDiv style={{width : "calc(50vw + 100px)"}}>
             {scenes.map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene.split(']')[1].substring(1)}</StyledButton>)}
+        </StyledDiv>
+    )
+}
+
+function VideoModal({scenes} : {scenes : string[]}){
+    const onClickHandler = (scene)=>{
+        // if(!confirm('장면을 변경하시겠습니까?')) return;
+        axios.post('/notebook/set', {scene})
+        .then(({data})=>{
+            // alert('장면 변경에 성공하였습니다.') //
+        })
+    }
+    return (
+        <StyledDiv style={{width : "calc(50vw + 100px)"}}>
+            {scenes.map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene}</StyledButton>)}
         </StyledDiv>
     )
 }

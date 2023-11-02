@@ -7,8 +7,9 @@ router.get('/', (req, res, next) => {
     res.render('index', { reactFile: 'broadcast' });
 });
 router.get('/get', async (req, res, next) => {
-    res.send(await (0, app_1.SceneGenerator)(app_1.BROADCAST));
-    (0, app_1.SceneGenerator)(app_1.LED);
+    const data = await app_1.BROADCAST.call('GetSceneList');
+    let scenes = data.scenes.map(val => val.sceneName);
+    res.send(scenes);
 });
 router.post('/set', (req, res, next) => {
     const { scene } = req.body;

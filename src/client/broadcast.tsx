@@ -19,9 +19,10 @@ const StyledDiv = styled.div`
     flex-direction: column;
     padding: 100px 100px;
 `
-const ws = new WebSocket(`ws://${window.location.host}/broadcast`)
+const ws = new WebSocket(`ws://${window.location.host}:8001/broadcast`)
 function Controller(){
     const [scenes, setScenes] = useState<string[]>([]);
+    const [notebookScenes, setNotebookScenes] = useState<string[]>([]);
     const [curScene, setCurScene] = useState<string>('')
     useLayoutEffect(()=>{
         axios.get(`/broadcast/get`).then(({data})=>{
@@ -29,12 +30,15 @@ function Controller(){
             ws.onmessage = (event)=>{
                 setCurScene(event.data)
             }
+            axios.get('/notebook/get').then(({data})=>{
+                setNotebookScenes(data)
+            })
         })
     },[])
     
 
     const onClickHandler = (scene)=>{
-        if(!confirm('장면을 변경하시겠습니까?')) return;
+        // if(!confirm('장면을 변경하시겠습니까?')) return;
         axios.post('/broadcast/set', {scene})
         .then(({data})=>{
             if(data){
@@ -49,8 +53,9 @@ function Controller(){
                 <Title style={{marginBottom : "30px"}}>현재화면 : {curScene}</Title>
                 {scenes.filter(scene=>!scene.includes('BRIDGE') && !scene.includes('LOOPING')).map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene}</StyledButton>)}
                 <BottomLine width='300px' style={{borderWidth : "1px", borderColor : "white", margin : "30px 30px"}}/>
-                <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지영상</StyledButton>
-                <StyledButton onClick={(e)=>{modalHandler(<MediaModal scenes={scenes.filter(scene=>scene.includes('LOOPING'))}/>)}} style={{margin : "30px 0"}}>루핑영상</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<NotebookModal scenes={notebookScenes.filter(scene=>scene.includes('BRIDGE'))}/>)}} style={{margin : "30px 0"}}>브릿지</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<NotebookModal scenes={notebookScenes.filter(scene=>scene.includes('VIDEO'))}/>)}} style={{margin : "30px 0"}}>영상</StyledButton>
+                <StyledButton onClick={(e)=>{modalHandler(<NotebookModal scenes={notebookScenes.filter(scene=>scene.includes('PPT'))}/>)}} style={{margin : "30px 0"}}>PPT</StyledButton>
             </StyledDiv>
             {/* <StyledDiv>
                 <Music/>
@@ -59,17 +64,17 @@ function Controller(){
     )
 }
 
-function MediaModal({scenes} : {scenes : string[]}){
+function NotebookModal({scenes} : {scenes : string[]}){
     const onClickHandler = (scene)=>{
-        if(!confirm('장면을 변경하시겠습니까?')) return;
-        axios.post('/broadcast/set', {scene})
+        // if(!confirm('장면을 변경하시겠습니까?')) return;
+        axios.post('/notebook/set', {scene})
         .then(({data})=>{
             // alert('장면 변경에 성공하였습니다.')
         })
     }
     return (
         <StyledDiv style={{width : "calc(50vw + 100px)"}}>
-            {scenes.map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene.split(']')[1].substring(1)}</StyledButton>)}
+            {scenes.map(scene=><StyledButton onClick={(e)=>{onClickHandler(scene)}} style={{margin : "30px 0"}}>{scene.includes(']') ? scene.split(']')[1].substring(1) : scene}</StyledButton>)}
         </StyledDiv>
     )
 }
